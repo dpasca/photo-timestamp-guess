@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+from .timeline import DATE_NAMED_RE, VIDEO_EXTENSIONS
+
 
 TIMELINE_CSV = "media_timeline.csv"
 MATCHES_CSV = "timestamp_candidate_matches.csv"
@@ -51,6 +53,24 @@ def next_anchored_name(
         index += 1
 
 
+def next_timestamp_name(
+    timestamp_used: datetime,
+    extension: str,
+    occupied_names: set[str],
+) -> str:
+    base_stem = timestamp_used.strftime("%Y-%m-%d %H.%M.%S")
+    candidate = f"{base_stem}{extension}"
+    if candidate not in occupied_names:
+        return candidate
+
+    index = 2
+    while True:
+        candidate = f"{base_stem}_{index:02d}{extension}"
+        if candidate not in occupied_names:
+            return candidate
+        index += 1
+
+
 def build_rename_plan(
     base_dir: Path,
     timeline_name: str = TIMELINE_CSV,
@@ -76,6 +96,12 @@ def build_rename_plan(
                 naming_status = "anchored_inferred"
                 match_score = top_match["score"]
                 reference_filename = top_match["reference_filename"]
+            elif (
+                Path(filename).suffix.lower() in VIDEO_EXTENSIONS
+                and row["timestamp_bucket"] == "reference"
+                and not DATE_NAMED_RE.match(Path(filename).stem)
+            ):
+                naming_status = "normalized_video"
             elif row["timestamp_bucket"] == "target":
                 naming_status = "kept_unmatched"
 
@@ -96,7 +122,7 @@ def build_rename_plan(
     occupied_names = {
         row["old_name"]
         for row in rows
-        if row["naming_status"] != "anchored_inferred"
+        if row["naming_status"] not in {"anchored_inferred", "normalized_video"}
     }
 
     rows.sort(
@@ -108,15 +134,22 @@ def build_rename_plan(
     )
 
     for row in rows:
-        if row["naming_status"] != "anchored_inferred":
-            continue
-        new_name = next_anchored_name(
-            row["reference_filename"],
-            row["extension"],
-            occupied_names,
-        )
-        row["new_name"] = new_name
-        occupied_names.add(new_name)
+        if row["naming_status"] == "anchored_inferred":
+            new_name = next_anchored_name(
+                row["reference_filename"],
+                row["extension"],
+                occupied_names,
+            )
+            row["new_name"] = new_name
+            occupied_names.add(new_name)
+        elif row["naming_status"] == "normalized_video":
+            new_name = next_timestamp_name(
+                row["timestamp_used"],
+                row["extension"],
+                occupied_names,
+            )
+            row["new_name"] = new_name
+            occupied_names.add(new_name)
 
     planned_rows = [
         RenamePlanRow(

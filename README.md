@@ -68,6 +68,7 @@ The tool writes these files into the target media folder:
 ## Naming behavior
 
 - reference files keep their original names by default
+- trusted videos with non-sortable names are normalized to `YYYY-MM-DD HH.MM.SS.ext`
 - inferred target files are anchored to the matched reference filename, for example `2026-03-16 10.14.09_02.jpg`
 - additional inferred files matching the same reference become `..._03`, `..._04`, and so on
 - unmatched weak-timestamp files keep their original names
