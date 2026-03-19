@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "photo-timestamp-guess"
+version = "0.1.0"
+description = "Reconstruct likely timestamps for mixed media folders and build a visual review page."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["Pillow>=9.5"]
+
+[project.scripts]
+photo-timestamp-guess = "photo_timestamp_guess.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

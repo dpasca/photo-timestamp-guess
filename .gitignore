@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.DS_Store
+
+# Generated analysis artifacts
+media_timeline.csv
+timestamp_candidate_matches.csv
+timestamp_batch_burst_summary.csv
+timestamp_batch_summary.txt
+timestamp_review.html
+timestamp_rename_plan.csv
